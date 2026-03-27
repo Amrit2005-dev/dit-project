@@ -1,0 +1,23 @@
+# Ignore Node Dependencies
+node_modules/
+dist/
+build/
+
+# Python Virtual Environments & Caches
+.venv/
+venv/
+env/
+__pycache__/
+*.pyc
+
+# Local Databases
+workouts.db
+*.sqlite3
+
+# Environment variables
+.env
+.env.local
+
+# OS Files
+.DS_Store
+Thumbs.db

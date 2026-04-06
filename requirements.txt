@@ -5,6 +5,6 @@ flask-socketio
 numpy
 python-socketio
 flask-cors
-tensorflow-cpu
+tensorflow
 eventlet
 gunicorn

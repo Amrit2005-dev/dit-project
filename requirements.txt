@@ -1,7 +1,10 @@
-opencv-python
+opencv-python-headless
 mediapipe
 flask
 flask-socketio
 numpy
 python-socketio
 flask-cors
+tensorflow-cpu
+eventlet
+gunicorn

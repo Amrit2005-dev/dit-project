@@ -18,10 +18,9 @@ import time
 
 # Dynamically resolve the path to the PoseNet codebase so it works flawlessly when cloned from GitHub
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-REPOS_PATH = os.path.abspath(os.path.join(BASE_DIR, '..', 'Rep-Counter-master', 'Rep-Counter-master'))
 
-if REPOS_PATH not in sys.path:
-    sys.path.append(REPOS_PATH)
+if BASE_DIR not in sys.path:
+    sys.path.append(BASE_DIR)
 
 import tensorflow as tf
 tf.compat.v1.disable_eager_execution()

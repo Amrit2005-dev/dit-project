@@ -220,8 +220,9 @@ def handle_set_exercise(data):
     emit('exercise_set', {'exercise': tracker.current_exercise})
 
 if __name__ == '__main__':
+    port = int(os.environ.get("PORT", 5000))
     print("Starting Main PoseNet Workout Tracker Server...")
-    print("Video feed available at http://localhost:5000/video_feed")
-    print("Socket.IO server running on port 5000")
+    print(f"Video feed available at http://localhost:{port}/video_feed")
+    print(f"Socket.IO server running on port {port}")
     
-    socketio.run(app, host='0.0.0.0', port=5000, debug=False)
+    socketio.run(app, host='0.0.0.0', port=port, debug=False)

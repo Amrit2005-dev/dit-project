@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { io } from 'socket.io-client';
 import { routines } from '../data/exercises';
 
-const SERVER = 'http://localhost:5000';
+const SERVER = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 /* ─────────────────────────────────────────────
    Reusable Phone Shell (mirrors App.jsx)

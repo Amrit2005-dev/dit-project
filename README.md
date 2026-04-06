@@ -1,60 +1,16 @@
-<div align="center">
-  
-# VisionFit 🏋️‍♂️👁️
+# React + Vite
 
-**Advanced AI-powered workout tracker that uses computer vision to analyze and count your exercises in real-time.**
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-</div>
+Currently, two official plugins are available:
 
-## Overview 🚀
-VisionFit is an intelligent, locally-hosted fitness dashboard that actively watches and tracks your physical movements. Instead of relying on manual counters, VisionFit spins up your webcam and applies a sophisticated **TensorFlow PoseNet** backend engine to intelligently map your body's skeleton. 
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
 
-Paired with a stunning, modern **Neumorphic React Dashboard**, VisionFit transforms your workouts by providing live rep counting, video playback, and persistent session saving.
+## React Compiler
 
-## Key Features ✨
-- **Live Skeletal Pose Tracking**: Intelligently maps key points on your body (shoulders, elbows, wrists) via a tailored TensorFlow implementation.
-- **Automatic Rep Counting**: Algorithmically tracks the spatial deltas of movement states to dynamically count reps (identifying stage shifts between `UP` and `DOWN`).
-- **Beautiful Neumorphic UI**: Designed with immersive dark modes, dynamic gradients, and smooth glowing accents utilizing React and Vite.
-- **Socket.io Streaming**: The Python backend perfectly synchronizes with the frontend dashboard—effortlessly beaming realtime rep counts and confidence metrics directly to React via Websockets.
-- **Permanent Progress Tracking (SQLite)**: Workouts are no longer fleeting! The backend automatically caches your completed reps and saves them to an on-disk `workouts.db` file so you can always view your past successes.
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
 
-## Architecture & Stack 🛠️
-- **Frontend**: React 19, Vite, Tailwind CSS, Socket.IO Client.
-- **Backend / Tracking**: Python, Flask, Flask-CORS, Flask-SocketIO.
-- **Machine Learning**: TensorFlow (v1.x backwards compatible engine via `posenet`), OpenCV 3.
-- **Database**: SQLite3.
+## Expanding the ESLint configuration
 
-## Local Installation 💻
-
-To get VisionFit's dual-engine system running locally, you need to spin up both the backend PoseNet server and the React frontend.
-
-### 1. Launch the Backend
-The Python server manages the webcam, loads the PoseNet TensorFlow models, and acts as the brains of the system.
-```bash
-# Navigate to the dashboard directory
-cd orchids-neumorphic-fitness-dashboard-main
-
-# Install dependencies (ensure you have Python installed)
-pip install -r requirements.txt
-
-# Start the tracker!
-python server.py
-```
-
-### 2. Launch the Dashboard
-The sleek React UI provides your control panel. Open a new terminal window:
-```bash
-# Navigate to the dashboard directory
-cd orchids-neumorphic-fitness-dashboard-main
-
-# Install Javascript dependencies
-npm install
-
-# Start the Vite development server!
-npm run dev
-```
-
-Finally, open the provided local URL (usually `http://localhost:5173/`) in your browser to start your first workout!
-
----
-*Developed with a focus on seamless hardware integration and stunning user experience.*
+If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.

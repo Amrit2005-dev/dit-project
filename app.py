@@ -1,227 +1,121 @@
 #!/usr/bin/env python3
 """
-Python PoseNet Exercise Tracking Server
-Provides real-time pose detection and rep counting via Socket.IO
-(Replaces MediaPipe with Rep-Counter-master PoseNet functionality)
+Cloud-ready backend:
+- API for saving/fetching workout progress
+- Optional Socket.IO events for live UI sync
+- No server-side camera or OpenCV loop
 """
 
-import sys
 import os
-import cv2
-import numpy as np
-from flask import Flask, Response, jsonify, request
-from flask_socketio import SocketIO, emit
-from flask_cors import CORS
 import sqlite3
-import threading
-import time
+from flask import Flask, jsonify, request
+from flask_cors import CORS
+from flask_socketio import SocketIO, emit
 
-# Dynamically resolve the path to the PoseNet codebase so it works flawlessly when cloned from GitHub
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-if BASE_DIR not in sys.path:
-    sys.path.append(BASE_DIR)
-
-import tensorflow as tf
-tf.compat.v1.disable_eager_execution()
-
-import posenet
-from run import countRepetition
-
-class ExerciseTracker:
-    def __init__(self):
-        # Tracking state
-        self.reps = 0
-        self.stage = "DOWN"
-        self.confidence = 85.0  # Set high confidence since posenet handles it nicely
-        self.form_warnings = []
-        self.is_running = False
-        
-        self.current_exercise = 'push_up'
-        
-        # PoseNet internal trackers
-        self.previous_pose = ''
-        self.flag = -1
-        self.current_state = [2, 2]
-
-        self.model_type = 101
-        self.scale_factor = 0.7125
-        
-    def set_exercise(self, exercise_name):
-        exercise_key = exercise_name.lower().replace(' ', '_').replace('_', '')
-        self.current_exercise = exercise_key
-        
-    def reset(self):
-        self.reps = 0
-        self.stage = "DOWN"
-        self.confidence = 0.0
-        self.form_warnings = []
-        
-        # Reset internal tracker variables
-        self.previous_pose = ''
-        self.flag = -1
-        self.current_state = [2, 2]
-
-# Initialize Flask app and Socket.IO
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'workout_tracker_secret'
+app.config["SECRET_KEY"] = "workout_tracker_secret"
+
+# Allow local dev + hosted frontend. You can narrow this in production.
+CORS(app, resources={r"/*": {"origins": "*"}})
 socketio = SocketIO(app, cors_allowed_origins="*")
-CORS(app)
+
+DB_PATH = "workouts.db"
+
 
 def init_db():
-    conn = sqlite3.connect('workouts.db')
-    c = conn.cursor()
-    c.execute('''CREATE TABLE IF NOT EXISTS progress
-                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                  exercise TEXT,
-                  reps INTEGER,
-                  timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)''')
+    conn = sqlite3.connect(DB_PATH)
+    cur = conn.cursor()
+    cur.execute(
+        """
+        CREATE TABLE IF NOT EXISTS progress (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          exercise TEXT NOT NULL,
+          reps INTEGER NOT NULL,
+          timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+        """
+    )
     conn.commit()
     conn.close()
+
 
 init_db()
 
-# Global tracker instance
-tracker = ExerciseTracker()
 
-@app.route('/')
+@app.route("/")
 def index():
-    return "Workout Tracker Server Running"
+    return "Workout API + Socket server running"
 
-@app.route('/start', methods=['POST'])
-def start_tracking():
-    tracker.is_running = True
-    return jsonify({"status": "started"})
 
-@app.route('/stop', methods=['POST'])
-def stop_tracking():
-    tracker.is_running = False
-    return jsonify({"status": "stopped"})
+@app.route("/health")
+def health():
+    return jsonify({"ok": True})
 
-@app.route('/reset', methods=['POST'])
-def reset_tracking():
-    tracker.reset()
-    return jsonify({"status": "reset", "reps": 0})
 
-@app.route('/set_exercise', methods=['POST'])
-def set_exercise():
-    data = request.get_json()
-    exercise_name = data.get('exercise', 'push_up')
-    tracker.set_exercise(exercise_name)
-    return jsonify({"status": "exercise_set", "exercise": tracker.current_exercise})
-
-@app.route('/toggle_camera', methods=['POST'])
-def toggle_camera():
-    return jsonify({"camera_mode": "front"})
-
-@app.route('/save_progress', methods=['POST'])
+@app.route("/save_progress", methods=["POST"])
 def save_progress():
-    data = request.get_json()
-    exercise = data.get('exercise', 'unknown')
-    reps = data.get('reps', 0)
-    
-    conn = sqlite3.connect('workouts.db')
-    c = conn.cursor()
-    c.execute("INSERT INTO progress (exercise, reps) VALUES (?, ?)", (exercise, reps))
+    data = request.get_json(silent=True) or {}
+    exercise = data.get("exercise", "unknown")
+    reps = int(data.get("reps", 0))
+    timestamp = data.get("timestamp")
+
+    conn = sqlite3.connect(DB_PATH)
+    cur = conn.cursor()
+    if timestamp:
+        cur.execute(
+            "INSERT INTO progress (exercise, reps, timestamp) VALUES (?, ?, ?)",
+            (exercise, reps, timestamp),
+        )
+    else:
+        cur.execute(
+            "INSERT INTO progress (exercise, reps) VALUES (?, ?)",
+            (exercise, reps),
+        )
+    row_id = cur.lastrowid
     conn.commit()
     conn.close()
-    
-    return jsonify({"status": "saved", "id": c.lastrowid})
 
-@app.route('/video_feed')
-def video_feed():
-    """Video streaming route wrapped with PoseNet"""
-    def generate():
-        with tf.compat.v1.Session() as sess:
-            model_cfg, model_outputs = posenet.load_model(tracker.model_type, sess)
-            output_stride = model_cfg['output_stride']
-            
-            cap = cv2.VideoCapture(0)
-            
-            while True:
-                input_image, display_image, output_scale = posenet.read_cap(
-                    cap, scale_factor=tracker.scale_factor, output_stride=output_stride)
-                
-                heatmaps_result, offsets_result, displacement_fwd_result, displacement_bwd_result = sess.run(
-                    model_outputs, feed_dict={'image:0': input_image}
-                )
-                
-                pose_scores, keypoint_scores, keypoint_coords = posenet.decode_multi.decode_multiple_poses(
-                    heatmaps_result.squeeze(axis=0),
-                    offsets_result.squeeze(axis=0),
-                    displacement_fwd_result.squeeze(axis=0),
-                    displacement_bwd_result.squeeze(axis=0),
-                    output_stride=output_stride,
-                    max_pose_detections=10,
-                    min_pose_score=0.4)
-                    
-                keypoint_coords *= output_scale 
-                
-                if isinstance(tracker.previous_pose, str): 
-                    tracker.previous_pose = keypoint_coords
-                
-                if tracker.is_running:
-                    # Pass the logic to PoseNet counting module
-                    text, tracker.previous_pose, tracker.current_state, tracker.flag = countRepetition(
-                        tracker.previous_pose, keypoint_coords, tracker.current_state, tracker.flag)
-                    
-                    if tracker.flag == 1:
-                        tracker.reps += 1
-                        tracker.flag = -1
-                        
-                    # Translate current_state bits to basic upward/downward mapping
-                    # When state shifts upward vs downward, we toggle "UP" and "DOWN" for UI
-                    if tracker.current_state[0] == 1 or tracker.current_state[1] == 1:
-                        tracker.stage = "UP"
-                    else:
-                        tracker.stage = "DOWN"
-                        
-                    socketio.emit('tracker_update', {
-                        'reps': tracker.reps,
-                        'stage': tracker.stage,
-                        'confidence': 85.0,
-                        'form_warnings': tracker.form_warnings
-                    })
+    socketio.emit(
+        "progress_saved",
+        {"id": row_id, "exercise": exercise, "reps": reps, "timestamp": timestamp},
+    )
+    return jsonify({"status": "saved", "id": row_id})
 
-                image = posenet.draw_skel_and_kp(
-                    display_image, pose_scores, keypoint_scores, keypoint_coords,
-                    min_pose_score=0.4, min_part_score=0.1)
-                
-                # Flip vertically drawn mirror effect if desired
-                image = cv2.flip(image, 1)
 
-                status_text = f"PoseNet LIVE | Reps: {tracker.reps} | Stage: {tracker.stage}"
-                cv2.putText(image, status_text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
-                
-                ret, jpeg = cv2.imencode('.jpg', image)
-                frame_bytes = jpeg.tobytes()
-                
-                yield (b'--frame\r\n'
-                       b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n\r\n')
-            
-            cap.release()
-    
-    return Response(generate(), mimetype='multipart/x-mixed-replace; boundary=frame')
+@app.route("/history", methods=["GET"])
+def history():
+    limit = int(request.args.get("limit", 50))
+    limit = max(1, min(limit, 500))
 
-@socketio.on('connect')
+    conn = sqlite3.connect(DB_PATH)
+    cur = conn.cursor()
+    cur.execute(
+        "SELECT id, exercise, reps, timestamp FROM progress ORDER BY id DESC LIMIT ?",
+        (limit,),
+    )
+    rows = cur.fetchall()
+    conn.close()
+
+    items = [
+        {"id": r[0], "exercise": r[1], "reps": r[2], "timestamp": r[3]}
+        for r in rows
+    ]
+    return jsonify({"items": items})
+
+
+@socketio.on("connect")
 def handle_connect():
-    print('Client connected')
-    emit('status', {'msg': 'Connected to workout tracker'})
+    emit("status", {"msg": "Connected to workout backend"})
 
-@socketio.on('disconnect')
-def handle_disconnect():
-    print('Client disconnected')
 
-@socketio.on('set_exercise')
-def handle_set_exercise(data):
-    exercise_name = data.get('exercise', 'push_up')
-    tracker.set_exercise(exercise_name)
-    emit('exercise_set', {'exercise': tracker.current_exercise})
+@socketio.on("live_rep_update")
+def handle_live_rep_update(data):
+    # Broadcast to all clients except sender (for multi-client dashboards)
+    emit("live_rep_update", data, broadcast=True, include_self=False)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
-    print("Starting Main PoseNet Workout Tracker Server...")
-    print(f"Video feed available at http://localhost:{port}/video_feed")
-    print(f"Socket.IO server running on port {port}")
-    
-    socketio.run(app, host='0.0.0.0', port=port, debug=False)
+    print("Starting Workout API + Socket server...")
+    print(f"Listening on port {port}")
+    socketio.run(app, host="0.0.0.0", port=port, debug=False)

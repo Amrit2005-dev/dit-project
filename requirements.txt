@@ -1,13 +1,8 @@
-opencv-python-headless
-mediapipe
 flask
 flask-socketio
-numpy==1.26.4
-python-socketio
 flask-cors
-tensorflow
+python-socketio
 gevent
 gevent-websocket
 gunicorn
-scipy
 PyYAML

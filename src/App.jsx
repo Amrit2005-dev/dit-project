@@ -38,8 +38,17 @@ const ROUTINES = {
           { name: 'Hammer Curl', sets: 3, reps: '12', muscle: 'Biceps' },
         ],
       },
+      {
+        label: 'Day 3 — Core + Abs',
+        tag: 'Core Day',
+        exercises: [
+          { name: 'Plank', sets: 3, reps: '2 min', muscle: 'Core', static: true },
+          { name: 'Crunches', sets: 3, reps: '20', muscle: 'Abs' },
+          { name: 'Russian Twist', sets: 3, reps: '30', muscle: 'Obliques' },
+        ],
+      },
     ],
-    schedule: { Mon: 'Push', Tue: 'Rest', Wed: 'Pull', Thu: 'Rest', Fri: 'Push', Sat: 'Cardio', Sun: 'Rest' },
+    schedule: { Mon: 'Push', Tue: 'Rest', Wed: 'Pull', Thu: 'Core', Fri: 'Push', Sat: 'Cardio', Sun: 'Rest' },
   },
   upper_lower: {
     id: 'upper_lower',
@@ -70,8 +79,17 @@ const ROUTINES = {
           { name: 'Calf Raises', sets: 4, reps: '15', muscle: 'Calves' },
         ],
       },
+      {
+        label: 'Day 3 — Core + Abs',
+        tag: 'Core',
+        exercises: [
+          { name: 'Plank', sets: 3, reps: '2 min', muscle: 'Core', static: true },
+          { name: 'Mountain Climber', sets: 3, reps: '20', muscle: 'Core' },
+          { name: 'Bicycle Crunch', sets: 3, reps: '30', muscle: 'Abs' },
+        ],
+      },
     ],
-    schedule: { Mon: 'Upper', Tue: 'Lower', Wed: 'Rest', Thu: 'Upper', Fri: 'Lower', Sat: 'Cardio', Sun: 'Rest' },
+    schedule: { Mon: 'Upper', Tue: 'Lower', Wed: 'Core', Thu: 'Upper', Fri: 'Lower', Sat: 'Cardio', Sun: 'Rest' },
   },
 }
 

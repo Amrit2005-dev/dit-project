@@ -2,7 +2,7 @@ export const routines = {
   push_pull: {
     name: "Push / Pull Split",
     type: "2-Day Split",
-    description: "10 exercises · 2 workout types",
+    description: "13 exercises · 3 workout types",
     push: [
       { name: "Push Up", model: "pushupModel", reps: 12, difficulty: "beginner" },
       { name: "Bench Press", model: "benchPressModel", reps: 10, difficulty: "intermediate" },
@@ -16,12 +16,17 @@ export const routines = {
       { name: "Bicep Curl", model: "bicepModel", reps: 12, difficulty: "beginner" },
       { name: "Face Pull", model: "facePullModel", reps: 12, difficulty: "beginner" },
       { name: "Deadlift", model: "deadliftModel", reps: 8, difficulty: "advanced" }
+    ],
+    core: [
+      { name: "Plank", model: "plankModel", reps: "2 min", difficulty: "beginner", static: true },
+      { name: "Crunches", model: "crunchModel", reps: 20, difficulty: "beginner" },
+      { name: "Russian Twist", model: "russianTwistModel", reps: 30, difficulty: "intermediate" }
     ]
   },
   upper_lower: {
     name: "Upper / Lower Split", 
     type: "4-Day Split",
-    description: "9 exercises · 2 workout types",
+    description: "12 exercises · 3 workout types",
     upper: [
       { name: "Bench Press", model: "benchPressModel", reps: 10, difficulty: "intermediate" },
       { name: "Pull Ups", model: "pullupModel", reps: 8, difficulty: "advanced" },
@@ -34,6 +39,11 @@ export const routines = {
       { name: "Lunges", model: "lungeModel", reps: 10, difficulty: "intermediate" },
       { name: "Deadlift", model: "deadliftModel", reps: 8, difficulty: "advanced" },
       { name: "Leg Raise", model: "legRaiseModel", reps: 12, difficulty: "beginner" }
+    ],
+    core: [
+      { name: "Plank", model: "plankModel", reps: "2 min", difficulty: "beginner", static: true },
+      { name: "Mountain Climber", model: "mountainClimberModel", reps: 20, difficulty: "intermediate" },
+      { name: "Bicycle Crunch", model: "bicycleCrunchModel", reps: 30, difficulty: "beginner" }
     ]
   }
 };
@@ -163,6 +173,51 @@ export const exerciseModels = {
     feedback: {
       good: ["Great raise!", "Control the movement", "Perfect form!"],
       bad: ["Don't arch back", "Slow and controlled", "Full range of motion"]
+    }
+  },
+  plankModel: {
+    name: "Plank",
+    keypoints: ["shoulders", "elbows", "hips", "feet"],
+    instructions: "Hold a straight line from head to heels, engage core",
+    feedback: {
+      good: ["Great form!", "Keep that core tight!", "Perfect plank!"],
+      bad: ["Don't let hips sag", "Keep back straight", "Engage your core"]
+    }
+  },
+  crunchModel: {
+    name: "Crunches",
+    keypoints: ["shoulders", "chest", "hips"],
+    instructions: "Lift shoulders off the floor, keep lower back down",
+    feedback: {
+      good: ["Great crunch!", "Control the movement", "Perfect form!"],
+      bad: ["Don't pull neck", "Use your abs", "Full range of motion"]
+    }
+  },
+  russianTwistModel: {
+    name: "Russian Twist",
+    keypoints: ["shoulders", "hips", "spine"],
+    instructions: "Rotate torso side to side while keeping feet off ground",
+    feedback: {
+      good: ["Great rotation!", "Keep feet up", "Perfect twist!"],
+      bad: ["Don't rush", "Control the movement", "Twist from core"]
+    }
+  },
+  mountainClimberModel: {
+    name: "Mountain Climber",
+    keypoints: ["shoulders", "hips", "knees", "feet"],
+    instructions: "Alternate bringing knees to chest in plank position",
+    feedback: {
+      good: ["Great pace!", "Keep hips steady", "Perfect form!"],
+      bad: ["Don't let hips rise", "Keep core tight", "Control the movement"]
+    }
+  },
+  bicycleCrunchModel: {
+    name: "Bicycle Crunch",
+    keypoints: ["shoulders", "elbows", "hips", "knees"],
+    instructions: "Opposite elbow to knee while rotating torso",
+    feedback: {
+      good: ["Great bicycle!", "Keep the rhythm", "Perfect form!"],
+      bad: ["Don't pull neck", "Control the movement", "Full rotation"]
     }
   }
 };

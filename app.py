@@ -115,7 +115,7 @@ def handle_live_rep_update(data):
 
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
+    port = int(os.environ.get("PORT", 5050))
     print("Starting Workout API + Socket server...")
     print(f"Listening on port {port}")
     socketio.run(app, host="0.0.0.0", port=port, debug=False)

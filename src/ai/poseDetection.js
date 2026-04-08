@@ -1,5 +1,5 @@
-import { Pose } from '@mediapipe/pose';
-import { Camera } from '@mediapipe/camera_utils';
+const Pose = window.Pose;
+const Camera = window.Camera;
 
 export class PoseDetector {
   constructor(videoElement, canvasElement, onResults) {

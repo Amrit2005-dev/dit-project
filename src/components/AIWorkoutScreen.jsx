@@ -29,6 +29,7 @@ function AIWorkoutScreen({ routineId }) {
   const [stage, setStage] = useState('UP');
   const [confidence, setConfidence] = useState(0);
   const [serverOnline, setServerOnline] = useState(false);
+  const [serverStatus, setServerStatus] = useState('checking'); // 'checking' | 'online' | 'offline' | 'waking'
   const [tracking, setTracking] = useState(false);
   const [timer, setTimer] = useState(120); // 2 minutes in seconds
   const [isTimerActive, setIsTimerActive] = useState(false);
@@ -53,9 +54,29 @@ function AIWorkoutScreen({ routineId }) {
   const progress = Math.min((reps / target) * 100, 100);
 
   useEffect(() => {
-    // Keeping backend ping for db records status
-    fetch(`${SERVER}/health`).then(() => setServerOnline(true)).catch(() => setServerOnline(false));
-    return () => stopCameraTracking();
+    // Ping with retry to handle Render free-tier cold starts (can take 30-60s)
+    let cancelled = false;
+    async function pingWithRetry(attempts = 5, delayMs = 10000) {
+      for (let i = 0; i < attempts; i++) {
+        if (cancelled) return;
+        if (i === 0) setServerStatus('checking');
+        else setServerStatus('waking');
+        try {
+          const res = await fetch(`${SERVER}/health`, { signal: AbortSignal.timeout(8000) });
+          if (!cancelled && res.ok) {
+            setServerOnline(true);
+            setServerStatus('online');
+            return;
+          }
+        } catch (_) { /* network error or timeout — keep retrying */ }
+        if (i < attempts - 1 && !cancelled) {
+          await new Promise(r => setTimeout(r, delayMs));
+        }
+      }
+      if (!cancelled) { setServerOnline(false); setServerStatus('offline'); }
+    }
+    pingWithRetry();
+    return () => { cancelled = true; stopCameraTracking(); };
   }, []);
 
   const handlePoseResults = (results) => {
@@ -195,8 +216,11 @@ function AIWorkoutScreen({ routineId }) {
             </button>
           </header>
           <div className="scroll-body">
-            <div style={{ fontSize: 11, color: serverOnline ? '#3DDB85' : '#FF5F6D', marginBottom: 8 }}>
-              {serverOnline ? 'Backend online' : 'Backend offline'}
+            <div style={{ fontSize: 11, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 5 }}>
+              {serverStatus === 'checking' && <><span style={{ display: 'inline-block', width: 7, height: 7, borderRadius: '50%', background: '#888', animation: 'pulse 1s infinite' }} />  <span style={{ color: '#888' }}>Checking backend…</span></>}
+              {serverStatus === 'waking' && <><span style={{ display: 'inline-block', width: 7, height: 7, borderRadius: '50%', background: '#FFCA28', animation: 'pulse 1s infinite' }} /><span style={{ color: '#FFCA28' }}>Backend waking up… (may take ~30s)</span></>}
+              {serverStatus === 'online' && <><span style={{ display: 'inline-block', width: 7, height: 7, borderRadius: '50%', background: '#3DDB85' }} /><span style={{ color: '#3DDB85' }}>Backend online</span></>}
+              {serverStatus === 'offline' && <><span style={{ display: 'inline-block', width: 7, height: 7, borderRadius: '50%', background: '#FF5F6D' }} /><span style={{ color: '#FF5F6D' }}>Backend offline — AI tracking uses device only</span></>}
             </div>
             {exercises.map((ex, i) => (
               <article key={i} className="card" style={{ padding: '14px 16px' }}>
